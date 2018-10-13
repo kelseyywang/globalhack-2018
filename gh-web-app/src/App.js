@@ -36,9 +36,22 @@ class App extends Component
 
   renderProviderManager(providerListName)
   {
-    return (
-      <ProviderManager providerList={providerListName} goBack={() => this.showDashboard()} />
-    );
+    if (this.state.showProviderList) {
+      console.log("showing provider list");
+      return (
+        <ProviderManager reloadFromFirebase={true} providerList={providerListName} goBack={() => this.showDashboard()} />
+      );
+    }
+  }
+
+  renderDashboardManager()
+  {
+    if (!this.state.showProviderList) {
+      console.log("showing provider list");
+      return (
+        <DashboardView onSetProvider={providerList => this.setProvider(providerList)} />
+      );
+    }
   }
 
   render()
@@ -50,10 +63,11 @@ class App extends Component
           <h1> Welcome to SLaftey Net </h1>
         </div>
 
-        <DashboardView onSetProvider={providerList => this.setProvider(providerList)} />
         <div>
-          {this.renderProviderManager("healthcare-providers")}
-          {this.renderProviderManager("childcare-providers")}
+          {this.renderDashboardManager()}
+        </div>
+        <div>
+          {this.renderProviderManager(this.state.currentProviderList)}
         </div>
       </div>
     );
@@ -69,10 +83,10 @@ class DashboardView extends Component
         <div className="Dashboard-content">
           <h1> Select a provider list </h1>
           <ul>
-            <li> <button onClick={() => this.props.onSetProvider("healthcare-providers")}> Healthcare </button> </li>
-            <li> <button onClick={() => this.props.onSetProvider("childcare-providers")}> Child Care </button> </li>
-            <li> <button> Legal Services </button> </li>
-            <li> <button> Employment Services </button> </li>
+            <li> <button className="ProviderSelect" onClick={() => this.props.onSetProvider("healthcare-providers")}> Healthcare </button> </li>
+            <li> <button className="ProviderSelect" onClick={() => this.props.onSetProvider("childcare-providers")}> Child Care </button> </li>
+            <li> <button className="ProviderSelect"> Legal Services </button> </li>
+            <li> <button className="ProviderSelect"> Employment Services </button> </li>
           </ul>
         </div>
       </div>
@@ -210,14 +224,26 @@ class TableManager extends Component
   }
 
   render() {
+    if (this.props.reloadFromFirebase)
+    {
+      console.log("RELOAD");
+      this.props.reloadFromFirebase = false;
+      this.loadDataFromFirebase();
+    }
     return (
       <div className="TableManager">
-        <button onClick={() => this.handleAddClick("COLUMN")}>
-          ADD NEW DATA FIELD
-          </button>
-          <button onClick={() => this.handleAddClick("ROW")}>
-            ADD NEW ENTRY
+        <div className="ToolBar">
+          <div className="LeftDock">
+            <button onClick={() => this.handleAddClick("COLUMN")}>
+              ADD NEW DATA FIELD
             </button>
+          </div>
+          <div className="RightDock">
+            <button onClick={() => this.handleAddClick("ROW")}>
+              ADD NEW ENTRY
+            </button>
+          </div>
+        </div>
         <div id="hot-app">
           <HotTable
             ref={this.hotTableComponent}
