@@ -9,16 +9,90 @@ import Handsontable from 'handsontable';
 
 class App extends Component
 {
+  constructor(props)
+  {
+    super(props);
+    this.state = {
+      showProviderList: false,
+      currentProviderList: "childcare-providers"
+    };
+  }
+
+  setProvider(providerList)
+  {
+    console.log("setting to provider list: " + providerList);
+    this.setState({
+      showProviderList: true,
+      currentProviderList: providerList
+    });
+  }
+
+  showDashboard()
+  {
+    this.setState({
+      showProviderList: false
+    });
+  }
+
+  renderProviderManager(providerListName)
+  {
+    return (
+      <ProviderManager providerList={providerListName} goBack={() => this.showDashboard()} />
+    );
+  }
+
   render()
   {
+    const providerManagerStyle = this.state.showProviderList ? {} : {display: 'none'} ;
     return (
       <div className="App">
         <div className="App-header">
           <h1> Welcome to SLaftey Net </h1>
         </div>
-        <TableManager providerList="healthcare-providers" />
-        <TableManager providerList="childcare-providers" />
 
+        <DashboardView onSetProvider={providerList => this.setProvider(providerList)} />
+        <div>
+          {this.renderProviderManager("healthcare-providers")}
+          {this.renderProviderManager("childcare-providers")}
+        </div>
+      </div>
+    );
+  }
+}
+
+class DashboardView extends Component
+{
+  render()
+  {
+    return (
+      <div className="DashboardView">
+        <div className="Dashboard-content">
+          <h1> Select a provider list </h1>
+          <ul>
+            <li> <button onClick={() => this.props.onSetProvider("healthcare-providers")}> Healthcare </button> </li>
+            <li> <button onClick={() => this.props.onSetProvider("childcare-providers")}> Child Care </button> </li>
+            <li> <button> Legal Services </button> </li>
+            <li> <button> Employment Services </button> </li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+}
+
+class ProviderManager extends Component
+{
+  constructor(props)
+  {
+    super(props);
+  }
+
+  render()
+  {
+    return (
+      <div>
+        <button className="providerManagerButton" onClick={() => this.props.goBack()}> BACK </button>
+        <TableManager providerList={this.props.providerList} />
       </div>
     );
   }
@@ -49,9 +123,13 @@ class TableManager extends Component
   }
 
   componentDidMount() {
-    console.log("mounted");
+    this.pullFromFirebase();
+  }
+
+  pullFromFirebase()
+  {
     const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.state.providerList);
-    infoRef.on('value', (snapshot) => {
+    infoRef.once('value', (snapshot) => {
       let items = snapshot.val();
       let newData = [];
       for (let item in items) {
@@ -72,15 +150,6 @@ class TableManager extends Component
             newItem[this.state.dataFields[i]] = items[item][this.state.dataFields[i]];
           }
           newData.push(newItem);
-          // {
-          //   id: item,
-          //   ["ADDRESS"]: items[item].ADDRESS,
-          //   name: items[item].NAME,
-          //   hours: items[item].HOURS,
-          //   languages: items[item].LANGUAGES
-          // }
-          console.log(items[item].ADDRESS);
-          console.log(newData);
         }
       }
       this.setState({
@@ -107,13 +176,6 @@ class TableManager extends Component
           newItem[j] = this.state.hotData[i][colHeaders[j]];
         }
         newData.push(newItem);
-        // newData.push([
-        //   this.state.hotData[i].name,
-        //   this.state.hotData[i]["ADDRESS"],
-        //   this.state.hotData[i].languages,
-        //   this.state.hotData[i].hours,
-        //
-        // ]);
       }
     }
     this.hotTableComponent.current.hotInstance.loadData(newData);
@@ -137,7 +199,7 @@ class TableManager extends Component
       // });
       // this.hotSettings.colHeaders = newColumnHeaders;
       this.hotTableComponent.current.hotInstance.alter('insert_col', this.state.hotData[0].length);
-      this.state.hotData[0][this.state.hotData[0].length - 1] = "NEW COL";
+      this.state.hotData[0][this.state.hotData[0].length - 1] = "NEW COL"; // TODO: fix state mutation
     }
     else if (type === "ROW") {
       this.hotTableComponent.current.hotInstance.alter('insert_row', 1);
