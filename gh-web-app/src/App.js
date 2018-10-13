@@ -39,35 +39,32 @@ class App extends Component
     if (this.state.showProviderList) {
       console.log("showing provider list");
       return (
-        <ProviderManager reloadFromFirebase={true} providerList={providerListName} goBack={() => this.showDashboard()} />
+        <ProviderManager reloadFromFirebase={'true'} providerList={providerListName} goBack={() => this.showDashboard()} />
       );
     }
   }
 
   renderDashboardManager()
   {
-    if (!this.state.showProviderList) {
-      console.log("showing provider list");
       return (
         <DashboardView onSetProvider={providerList => this.setProvider(providerList)} />
       );
-    }
   }
 
   render()
   {
-    const providerManagerStyle = this.state.showProviderList ? {} : {display: 'none'} ;
     return (
       <div className="App">
         <div className="App-header">
-          <h1> Welcome to SLaftey Net </h1>
+          <h3> SLaftey Net </h3>
         </div>
-
-        <div>
-          {this.renderDashboardManager()}
-        </div>
-        <div>
-          {this.renderProviderManager(this.state.currentProviderList)}
+        <div className="MainContent">
+          <div className="Dashboard-Container">
+            {this.renderDashboardManager()}
+          </div>
+          <div>
+            {this.renderProviderManager(this.state.currentProviderList)}
+          </div>
         </div>
       </div>
     );
@@ -81,13 +78,11 @@ class DashboardView extends Component
     return (
       <div className="DashboardView">
         <div className="Dashboard-content">
-          <h1> Select a provider list </h1>
-          <ul>
-            <li> <button className="ProviderSelect" onClick={() => this.props.onSetProvider("healthcare-providers")}> Healthcare </button> </li>
-            <li> <button className="ProviderSelect" onClick={() => this.props.onSetProvider("childcare-providers")}> Child Care </button> </li>
-            <li> <button className="ProviderSelect"> Legal Services </button> </li>
-            <li> <button className="ProviderSelect"> Employment Services </button> </li>
-          </ul>
+          <h4> Provider Info </h4>
+             <button className="ProviderSelect" onClick={() => this.props.onSetProvider("healthcare-providers")}> Healthcare </button>
+             <button className="ProviderSelect" onClick={() => this.props.onSetProvider("childcare-providers")}> Child Care </button>
+             <button className="ProviderSelect"> Legal Services </button>
+             <button className="ProviderSelect"> Employment Services </button>
         </div>
       </div>
     );
@@ -106,7 +101,7 @@ class ProviderManager extends Component
     return (
       <div>
         <button className="providerManagerButton" onClick={() => this.props.goBack()}> BACK </button>
-        <TableManager providerList={this.props.providerList} />
+        <TableManager providerList={this.props.providerList} reloadFromFirebase={this.props.reloadFromFirebase} />
       </div>
     );
   }
@@ -118,9 +113,10 @@ class TableManager extends Component
   {
     super(props);
     this.state = {
-      providerList: props.providerList,
+      providerList: this.props.providerList,
       hotData: [],
-      dataFields: []
+      dataFields: [],
+      reloadFromFirebase: this.props.reloadFromFirebase
     }
     this.hotSettings = {
       data: [],
@@ -224,12 +220,19 @@ class TableManager extends Component
   }
 
   render() {
-    if (this.props.reloadFromFirebase)
+    console.log("RELOAD " + this.state.reloadFromFirebase + this.state.providerList);
+    if (this.hotTableComponent.current != null)
     {
-      console.log("RELOAD");
-      this.props.reloadFromFirebase = false;
       this.loadDataFromFirebase();
     }
+    // if (this.state.reloadFromFirebase)
+    // {
+    //   console.log("RELOAD");
+    //   this.setState({
+    //     reloadFromFirebase: false
+    //   });
+    //   // this.pullFromFirebase();
+    // }
     return (
       <div className="TableManager">
         <div className="ToolBar">
