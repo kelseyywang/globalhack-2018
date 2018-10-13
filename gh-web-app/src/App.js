@@ -13,7 +13,12 @@ class App extends Component
   {
     return (
       <div className="App">
+        <div className="App-header">
+          <h1> Welcome to SLaftey Net </h1>
+        </div>
         <TableManager providerList="healthcare-providers" />
+        <TableManager providerList="childcare-providers" />
+
       </div>
     );
   }
@@ -30,10 +35,7 @@ class TableManager extends Component
       dataFields: []
     }
     this.hotSettings = {
-      data: [
-        ["NAME", "ADDRESS", "HOURS", "LANGUAGES", "FREE CLINIC"],
-        ["some hospital", "17979 sample dr., st. louis, mo, 12345", "9 - 5", "English, Spanish", "Yes"]
-      ],
+      data: [],
       rowHeaders: false,
       fixedRowsTop: 1,
       cells: function (row, col) {
@@ -58,16 +60,25 @@ class TableManager extends Component
           this.setState({
             dataFields: items[item]
           });
+          newData.push(items[item]);
         }
         else if (item !== "TRACKED-DATA")
         {
-          newData.push({
-            id: item,
-            ["ADDRESS"]: items[item].ADDRESS,
-            name: items[item].NAME,
-            hours: items[item].HOURS,
-            languages: items[item].LANGUAGES
-          });
+          var newItem = {
+            id: item
+          };
+          for (let i = 0; i < this.state.dataFields.length; i++)
+          {
+            newItem[this.state.dataFields[i]] = items[item][this.state.dataFields[i]];
+          }
+          newData.push(newItem);
+          // {
+          //   id: item,
+          //   ["ADDRESS"]: items[item].ADDRESS,
+          //   name: items[item].NAME,
+          //   hours: items[item].HOURS,
+          //   languages: items[item].LANGUAGES
+          // }
           console.log(items[item].ADDRESS);
           console.log(newData);
         }
@@ -83,14 +94,27 @@ class TableManager extends Component
   {
     var newData = [];
     console.log(newData);
+    var colHeaders = this.state.hotData[0];
     for (let i = 0; i < this.state.hotData.length; i++)
     {
-      newData.push([
-        this.state.hotData[i].name,
-        this.state.hotData[i].ADDRESS,
-        this.state.hotData[i].hours,
-        this.state.hotData[i].languages
-      ]);
+      if (i === 0) {
+        newData.push(this.state.hotData[i]);
+      }
+      else {
+        var newItem = [];
+        for (let j = 0; j < colHeaders.length; j++)
+        {
+          newItem[j] = this.state.hotData[i][colHeaders[j]];
+        }
+        newData.push(newItem);
+        // newData.push([
+        //   this.state.hotData[i].name,
+        //   this.state.hotData[i]["ADDRESS"],
+        //   this.state.hotData[i].languages,
+        //   this.state.hotData[i].hours,
+        //
+        // ]);
+      }
     }
     this.hotTableComponent.current.hotInstance.loadData(newData);
   }
@@ -112,8 +136,8 @@ class TableManager extends Component
       //   colHeaders: newColumnHeaders
       // });
       // this.hotSettings.colHeaders = newColumnHeaders;
-      this.hotTableComponent.current.hotInstance.alter('insert_col', this.hotSettings.data[0].length);
-      this.hotSettings.data[0][this.hotSettings.data[0].length - 1] = "NEW COL";
+      this.hotTableComponent.current.hotInstance.alter('insert_col', this.state.hotData[0].length);
+      this.state.hotData[0][this.state.hotData[0].length - 1] = "NEW COL";
     }
     else if (type === "ROW") {
       this.hotTableComponent.current.hotInstance.alter('insert_row', 1);
