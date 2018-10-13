@@ -7,13 +7,27 @@ import Handsontable from 'handsontable';
 // import 'handsontable-pro/dist/handsontable.full.css';
 // import { HotTable } from '@handsontable-pro/react';
 
-class App extends Component {
+class App extends Component
+{
+  render()
+  {
+    return (
+      <div className="App">
+        <TableManager providerList="healthcare-providers" />
+      </div>
+    );
+  }
+}
+
+class TableManager extends Component
+{
   constructor(props)
   {
     super(props);
     this.state = {
-      providerList: "healthcare-providers",
-      hotData: []
+      providerList: props.providerList,
+      hotData: [],
+      dataFields: []
     }
     this.hotSettings = {
       data: [
@@ -39,7 +53,13 @@ class App extends Component {
       let items = snapshot.val();
       let newData = [];
       for (let item in items) {
-        if (item !== "TRACKED-DATA")
+        if (item === "TRACKED-DATA")
+        {
+          this.setState({
+            dataFields: items[item]
+          });
+        }
+        else if (item !== "TRACKED-DATA")
         {
           newData.push({
             id: item,
@@ -62,6 +82,7 @@ class App extends Component {
   loadDataFromFirebase()
   {
     var newData = [];
+    console.log(newData);
     for (let i = 0; i < this.state.hotData.length; i++)
     {
       newData.push([
@@ -104,9 +125,7 @@ class App extends Component {
 
   render() {
     return (
-      <div className="App">
-        Welcome to SLafety Net.
-        <TextBox />
+      <div className="TableManager">
         <button onClick={() => this.handleAddClick("COLUMN")}>
           ADD NEW DATA FIELD
           </button>
@@ -121,11 +140,6 @@ class App extends Component {
       </div>
     );
   }
-}
-
-class Table extends Component
-{
-
 }
 
 class TextBox extends Component
