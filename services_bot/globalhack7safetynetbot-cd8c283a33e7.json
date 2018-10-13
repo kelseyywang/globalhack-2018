@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "globalhack7safetynetbot",
+  "private_key_id": "cd8c283a33e7e69c294c08297b65959a251065a7",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDGTyD55/r5TUYr\n8DaEkGJpSTKmP18WXtyfIm55uKd9yI2BEXVcsaZaCgOihojHYyZxHCM6ZWAmmCdq\nYlM6ZfhlcPafpIvkUoaNpZZ8S+LLDTcJd6JyyGUg1wl8W2iW7BE1DyUHGhctMLvW\nY6WQKh89jUZO1R9YfwQvnmW6ddxzWhdoHceI/nM6hkP7RVGeTVah9Ogua8+ejvdY\nUXzxSZQsMpk4KExyCo0EKMi5ot802tP7ICiTGQWmJC4VoOqagdsOzLvOtXMLuxxb\nLujPZLEfbyBe3zAiDH1WeCa5LdGZaph1BjMpvF4NBdYCjS6ab8iyivp3zYkFi1h8\nzPNvGH8rAgMBAAECggEAJux+JP8nEEreFJ68HK34WwEOi3oR0GLDPAr2kzauzW4R\ndD14gz6tT6v6haqRa01nTLlAouQmCL1Bs0xkWKiOJl8TUUdrW9/k4CWZ0YDVnZRU\n8qtEO/Jggx8iEgIhF8pzIC5+TpQM64ZOwChj5VWXNy4lGDEVy3l22V/mSMB8ijlS\nImU7+a5ePS3JXACb4aB1Ad6mK1KRQVgtaqQb1/wC+EFWEjYi1RHPewigO+1e7LW5\nrGwZHBNG81IjG32zWm9QAMVrs5Z4/JVp0YbMxziYeL6Y90yGdtS69V3jryOYw8LR\n1PXs8c2iHUkRd24q5+/McgBG3fHn5w1fyEr3RGd7gQKBgQD9XrAfbS5DVl/NKiWy\n4v2jrOOrP9SVJoCRAuK6LhyCb7prU+x8qryZiVyxCWE9cdXajIacCl5wy4hnVKsJ\nvejW1F9MTDOSrr0o4QYMuq1JgjqAoCE+WK/wih16ZOG4eQY8FZGaonEnoQxVr5mn\nIuN9v9HHvmWtVF1Rq4g/af6DqwKBgQDIXh7uCI/WgPOs4gU0E3on3uoDB6G8FnOp\ng5plBotztHFyNi7Vy2lI1FIsCVeivEAA+0vfqINvPRQH/11eOiFhmnPfyueZrD2o\nMR6dSsA6JJKX9ztd8+0tPYkmzRemd9s/ygBxpZT8/QLt8LS75RISSw+NaPB+TmTy\njfy4F6JygQKBgB1DH1Ix2OL8Ccp3MK1tW9/Yat7vW0zyimy1CZx5EN/bqYsVwT1Q\ntsGAxMzJiYqAKDO6gR1qcSfTyegtNifE4CxXkL4OGvK47a3X90vnD3Zq7PjIBa7e\nrUs5mFf3aL5Wc+rijtNuKWVrSzJmOne8JsvyKHdKPRH8qV5yUiUIx9VLAoGBAJx1\nWoOW7fKa2SxrhZKnjuCpYWQiRnnfsktw91Ph62zbPybnBmVto/X5zXyTgvoRM41Q\nrWulY5SuRgEEt/zHOZ/Egq0C/RxzceXvDS/X2gjM3CeMJ7BytAZ6oalJxyj3OJ4z\n92rG2HNAglQYfJioBBeCw08x3XFTd+IrW2bJFdGBAoGAAXLqVctCPUQ7Iwf3DOEm\n0IdHrl8V8jKwEzPUvFQx4gZ1SoFqcWy9gA31dJdA7C6BdI6XjR9AHcg/W0v5Sb1f\n6Ot4t5v3HnEq9gL5V9KfJSZGUJtcx44ZD2rw9tQYHqdLq4TIKoJUEkvkIe5UC0HN\n8a3hfD+EwHRAkNqhVfK/bpU=\n-----END PRIVATE KEY-----\n",
+  "client_email": "gh-safetybot@globalhack7safetynetbot.iam.gserviceaccount.com",
+  "client_id": "109253978911183247309",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gh-safetybot%40globalhack7safetynetbot.iam.gserviceaccount.com"
+}
