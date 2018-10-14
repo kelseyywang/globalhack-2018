@@ -33,6 +33,7 @@ TEXT_MAP = {
     'phase1mess': 'Please clarify what you need or enter one of the following categories: Health, Childcare, Employment, Legal.',
     'phase2': 'We can help with that. What is your zipcode?',
     'phase2mess': 'Sorry, I didn\'t get that. Please enter a 5-digit zipcode.',
+    'phase3mess': 'Please answer yes or no.'
 }
 
 CUSTOM_TEXT_MAP = {
@@ -154,9 +155,9 @@ def get_custom_msg(msg_type, phase):
     else:
         return msg_type
         
-def parse_yes_no(text):
+def detect_yes_or_no(text):
     text = text.lower()
-    if 'yes' in text or 'y' in text or 'si' in text or 'sí' in text:
+    if 'yes' in text or 'y' in text:
         return 'yes'
     elif 'no' in text or 'n' in text:
         return 'no'
@@ -221,7 +222,6 @@ def sms_reply():
             curr_intent = detect_intent(detect_intent_dialogflow(message_body))
             if curr_intent not in ('healthcare', 'childcare', 'legal', 'employment'):
                 curr_intent = 'none'
-            print("CURR INTENT WAS", curr_intent)
         if curr_intent == 'none':
             resp_messages.append(get_msg('phase1mess'))
         else:
@@ -245,7 +245,20 @@ def sms_reply():
         curr_intent = curr_info['intent']
         curr_zipcode = curr_info['zipcode']
     if curr_phase == 3:
-        print("CURR PHASE IS 3. VERIFY FILTER QUESTION.")
+        curr_filter_ans = detect_yes_or_no(message_body)
+        if curr_filter_ans == 'none':
+            resp_messages.append(get_msg('phase3mess'))
+        else:
+            if determine_more_filters(curr_intent, phase + 1):
+                print("Not implemented. Keep going in this case.")
+            else:
+                print("Not implemented. Output list of resources in this case.")            
+    elif curr_phase > 3:
+        curr_lang = curr_info['lang']
+        curr_intent = curr_info['intent']
+        curr_zipcode = curr_info['zipcode']
+        #TODO: delet^
+        curr_ans = curr_info['filter_ans']
     # custom questions
     if curr_phase == 4 and curr_intent == 'childcare':
         print("ya")
