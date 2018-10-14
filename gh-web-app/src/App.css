@@ -19,6 +19,7 @@
   height: 89vh;
   padding: 0;
   display: flex;
+  font-family: 'Lato';
 }
 
 .Dashboard-Container
@@ -27,10 +28,33 @@
   height: 100%;
   width: 20%;
   background-color: #f5f5f5;
+  font-family: 'Lato';
+}
+
+.QuestionPreview
+{
+  float: right;
+  border: 0.1px solid rgba(0,0,0,0);
+  width: 20%;
+  padding: 20px;
+  flex-grow: 1;
+  background-color: #f9f9f9;
+  font-family: 'Lato';
+  animation-name: animatetop;
+    animation-duration: 1s;
+}
+
+@keyframes animatetop {
+    from {left: -300px; opacity: 0}
+    to {left: 0; opacity: 1}
 }
 
 .ProviderManager {
+  padding: 20px;
   float: left;
+  flex-grow: 1;
+  animation-name: animatetop;
+    animation-duration: 1s;
 }
 
 .ProviderSelect
@@ -48,6 +72,7 @@
   padding:5px 31px;
   text-decoration:none;
   box-shadow: none;
+  font-family: 'Lato';
 }
 
 .ProviderSelect:hover {
@@ -61,18 +86,28 @@
 
 .ToolBar {
   display: flex;
+  width: 100%;
 }
 
 .LeftDock {
   text-align: left;
+  width: 50%;
 }
 
 .RightDock {
+  float: right;
   text-align: right;
+  width: 50%;
+}
+
+button {
+  font-family: 'Lato';
 }
 
 .providerManagerButton {
   margin: 20px;
+  border: none;
+  background-color: transparent;
 }
 
 .App-link {
@@ -85,4 +120,8 @@
 
 .TableManager {
   margin: 20px;
+}
+
+.handsontable td.headerformat {
+  background: #F44336
 }

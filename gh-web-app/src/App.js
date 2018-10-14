@@ -14,7 +14,11 @@ class App extends Component
     super(props);
     this.state = {
       showProviderList: false,
-      currentProviderList: "childcare-providers"
+      currentProviderList: "childcare-providers",
+      dataFromFirebase: [],
+      dataFieldsFromFirebase: [],
+      itemNames: [],
+      selectedColumn: 0
     };
   }
 
@@ -24,6 +28,87 @@ class App extends Component
     this.setState({
       showProviderList: true,
       currentProviderList: providerList
+    });
+    this.pullFromFirebase(providerList);
+  }
+
+  setColumn(col)
+  {
+    this.setState({
+      selectedColumn: col
+    });
+  }
+
+  pullFromFirebase(providerList)
+  {
+    this.setState({
+      dataFromFirebase: [],
+      dataFieldsFromFirebase: [],
+      itemNames: []
+    });
+    const infoRef = firebase.database().ref("web-app").child("provider-lists").child(providerList);
+    infoRef.once('value', (snapshot) => {
+      let items = snapshot.val();
+      let newData = [];
+      let dataFields = [];
+      let itemNamesTemp = [];
+      for (let item in items) {
+        itemNamesTemp.push(item);
+
+        if (item === "TRACKED-DATA")
+        {
+          dataFields = items[item];
+          var dataHeaders = [];
+          for(let field in dataFields)
+          {
+            dataHeaders.push(dataFields[field]);
+          }
+          dataFields = dataHeaders;
+          newData.push(dataHeaders);
+        }
+        else if (item !== "TRACKED-DATA" && item !== "DATA-TO-QUESTIONS")
+        {
+          var newItem = {
+            id: item
+          };
+          for (let field in dataFields)
+          {
+            console.log(field);
+            console.log(dataFields[field]);
+            if (items[item][dataFields[field]])
+            {
+              newItem[dataFields[field]] = items[item][dataFields[field]];
+            }
+
+          }
+          console.log(newItem);
+          newData.push(newItem);
+        }
+      }
+      this.setState({
+        dataFromFirebase: newData,
+        itemNames: itemNamesTemp,
+        dataFieldsFromFirebase: dataFields,
+      });
+      console.log(this.state);
+    });
+  }
+
+  addNewEntry()
+  {
+    console.log("NEW ENTRY" + this.state.currentProviderList);
+    var newData = this.state.itemNames.slice();
+    const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.state.currentProviderList);
+    var newItemName = infoRef.push().key;
+    var newRef = infoRef.child(newItemName);
+    newRef.update({
+      "ADDRESS": "LOL"
+    });
+
+
+    newData.push(newItemName);
+    this.setState({
+      itemNames: newData
     });
   }
 
@@ -36,12 +121,16 @@ class App extends Component
 
   renderProviderManager(providerListName)
   {
-    if (this.state.showProviderList) {
       console.log("showing provider list");
       return (
-        <ProviderManager reloadFromFirebase={'true'} providerList={providerListName} goBack={() => this.showDashboard()} />
+        <ProviderManager
+          reloadFromFirebase={'true'}
+          dataFieldsFromFirebase={this.state.dataFieldsFromFirebase}
+          dataFromFirebase={this.state.dataFromFirebase}
+          dataItemNames={this.state.itemNames}
+          addNewEntry={() => this.addNewEntry()}
+          providerList={providerListName} goBack={() => this.showDashboard()} />
       );
-    }
   }
 
   renderDashboardManager()
@@ -51,8 +140,16 @@ class App extends Component
       );
   }
 
+  renderQuestionPreview()
+  {
+      return(
+            <QuestionPreview />
+      );
+  }
+
   render()
   {
+    const style = this.state.showProviderList ? {} : {display: 'none'};
     return (
       <div className="App">
         <div className="App-header">
@@ -62,10 +159,25 @@ class App extends Component
           <div className="Dashboard-Container">
             {this.renderDashboardManager()}
           </div>
-          <div>
+          <div style={style}>
             {this.renderProviderManager(this.state.currentProviderList)}
           </div>
+          <div className="QuestionPreview" style={style}>
+            {this.renderQuestionPreview()}
+          </div>
         </div>
+      </div>
+    );
+  }
+}
+
+class QuestionPreview extends Component
+{
+  render()
+  {
+    return (
+      <div>
+        <h2> Question preview </h2>
       </div>
     );
   }
@@ -78,7 +190,7 @@ class DashboardView extends Component
     return (
       <div className="DashboardView">
         <div className="Dashboard-content">
-          <h4> Provider Info </h4>
+          <h3> Provider Info </h3>
              <button className="ProviderSelect" onClick={() => this.props.onSetProvider("healthcare-providers")}> Healthcare </button>
              <button className="ProviderSelect" onClick={() => this.props.onSetProvider("childcare-providers")}> Child Care </button>
              <button className="ProviderSelect"> Legal Services </button>
@@ -99,9 +211,15 @@ class ProviderManager extends Component
   render()
   {
     return (
-      <div>
-        <button className="providerManagerButton" onClick={() => this.props.goBack()}> BACK </button>
-        <TableManager providerList={this.props.providerList} reloadFromFirebase={this.props.reloadFromFirebase} />
+      <div className="ProviderManager">
+        <h2> Provider Information </h2>
+        <TableManager
+          providerList={this.props.providerList}
+          dataFieldsFromFirebase={this.props.dataFieldsFromFirebase}
+          dataFromFirebase={this.props.dataFromFirebase}
+          dataItemNames={this.props.dataItemNames}
+          addNewEntry={() => this.props.addNewEntry()}
+          reloadFromFirebase={this.props.reloadFromFirebase} />
       </div>
     );
   }
@@ -115,16 +233,20 @@ class TableManager extends Component
     this.state = {
       providerList: this.props.providerList,
       hotData: [],
-      dataFields: [],
+      dataFields: this.props.dataFieldsFromFirebase,
+      itemNames: [],
       reloadFromFirebase: this.props.reloadFromFirebase
     }
     this.hotSettings = {
-      data: [],
       rowHeaders: false,
       fixedRowsTop: 1,
       cells: function (row, col) {
-
-      }
+        var cellProp = {};
+        if (row === 0){
+          cellProp.classname = 'headerformat'
+        }
+        return cellProp
+      },
     }
     this.hotTableComponent = React.createRef();
     // add hook for handsontable afterChange hook https://docs.handsontable.com/pro/6.0.1/Hooks.html#event:afterChange
@@ -133,69 +255,67 @@ class TableManager extends Component
   }
 
   componentDidMount() {
-    this.pullFromFirebase();
+    console.log(this.props);
+    this.loadDataToTable();
+    Handsontable.hooks.add('afterChange', (change, source)=>this.updateFirebase(change, source));
+    // this.hotTableComponent.current.hotInstance.addHook('afterChange', this.updateFirebase);
   }
 
-  pullFromFirebase()
+  updateFirebase(changes, source)
   {
-    const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.state.providerList);
-    infoRef.once('value', (snapshot) => {
-      let items = snapshot.val();
-      let newData = [];
-      for (let item in items) {
-        if (item === "TRACKED-DATA")
-        {
-          this.setState({
-            dataFields: items[item]
+    console.log(changes);
+    if (source === 'loadData') {
+        return; //don't save this change
+    }
+    console.log(this);
+    if (this.props != null){
+      for (let i = 0; i < changes.length; i++)
+      {
+        console.log("UPDATE FIREBASE: " + changes[i][0] + " " + this.props.providerList);
+        const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.props.providerList);
+        var data = this.hotTableComponent.current.hotInstance.getData();
+        console.log("UPDATING: " + this.props.dataItemNames[changes[i][0]]);
+        if (changes[i][0] == 0){
+          // IF YOU EDITED A COLUMN HEADER
+          infoRef.child(this.props.dataItemNames[changes[i][0]]).update({
+            [this.props.dataFieldsFromFirebase[changes[i][1]]]: changes[i][3]
           });
-          newData.push(items[item]);
+          infoRef.child(this.props.dataItemNames[changes[i][0]]).update({
+            [changes[i][2]]: null
+          });
         }
-        else if (item !== "TRACKED-DATA")
-        {
-          var newItem = {
-            id: item
-          };
-          for (let i = 0; i < this.state.dataFields.length; i++)
-          {
-            newItem[this.state.dataFields[i]] = items[item][this.state.dataFields[i]];
-          }
-          newData.push(newItem);
+        else {
+          infoRef.child(this.props.dataItemNames[changes[i][0]]).update({
+            [this.props.dataFieldsFromFirebase[changes[i][1]]]: changes[i][3]
+          });
         }
+
       }
-      this.setState({
-        hotData: newData
-      });
-      this.loadDataFromFirebase();
-    });
+    }
   }
 
-  loadDataFromFirebase()
+  loadDataToTable()
   {
+    console.log("LOAD DATA TO TABLE: " + this.props.dataFromFirebase);
     var newData = [];
     console.log(newData);
-    var colHeaders = this.state.hotData[0];
-    for (let i = 0; i < this.state.hotData.length; i++)
+    var colHeaders = this.props.dataFromFirebase[0];
+    console.log(colHeaders);
+    for (let i = 0; i < this.props.dataFromFirebase.length; i++)
     {
       if (i === 0) {
-        newData.push(this.state.hotData[i]);
+        newData.push(this.props.dataFromFirebase[i]);
       }
       else {
         var newItem = [];
-        for (let j = 0; j < colHeaders.length; j++)
+        for (let field in colHeaders)
         {
-          newItem[j] = this.state.hotData[i][colHeaders[j]];
+          newItem[field] = this.props.dataFromFirebase[i][colHeaders[field]];
         }
         newData.push(newItem);
       }
     }
     this.hotTableComponent.current.hotInstance.loadData(newData);
-  }
-
- firstRowRenderer(instance, td, row, col, prop, value, cellProperties) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
-    td.style.fontWeight = 'bold';
-    td.style.color = 'green';
-    td.style.background = '#CEC';
   }
 
   handleAddClick(type)
@@ -208,8 +328,9 @@ class TableManager extends Component
       //   colHeaders: newColumnHeaders
       // });
       // this.hotSettings.colHeaders = newColumnHeaders;
-      this.hotTableComponent.current.hotInstance.alter('insert_col', this.state.hotData[0].length);
-      this.state.hotData[0][this.state.hotData[0].length - 1] = "NEW COL"; // TODO: fix state mutation
+      this.hotTableComponent.current.hotInstance.alter('insert_col', this.props.dataFromFirebase[0].length);
+      this.hotTableComponent.current.hotInstance.setDataAtCell(0, this.hotTableComponent.current.hotInstance.getData()[0].length - 1, "NEW COL");
+      // this.props.dataFromFirebase[0][this.props.dataFromFirebase[0].length - 1] = "NEW COL"; // TODO: fix state mutation
     }
     else if (type === "ROW") {
       this.hotTableComponent.current.hotInstance.alter('insert_row', 1);
@@ -223,7 +344,7 @@ class TableManager extends Component
     console.log("RELOAD " + this.state.reloadFromFirebase + this.state.providerList);
     if (this.hotTableComponent.current != null)
     {
-      this.loadDataFromFirebase();
+      this.loadDataToTable();
     }
     // if (this.state.reloadFromFirebase)
     // {
@@ -242,7 +363,7 @@ class TableManager extends Component
             </button>
           </div>
           <div className="RightDock">
-            <button onClick={() => this.handleAddClick("ROW")}>
+            <button onClick={() => this.props.addNewEntry()}>
               ADD NEW ENTRY
             </button>
           </div>
