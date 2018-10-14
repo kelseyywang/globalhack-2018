@@ -1,16 +1,14 @@
-import React, { Component } from 'react';
-import firebase from './firebase.js';
-import './App.css';
-import 'handsontable/dist/handsontable.full.css';
-import { HotTable } from '@handsontable/react';
-import Handsontable from 'handsontable';
+import React, { Component } from "react";
+import firebase from "./firebase.js";
+import "./App.css";
+import "handsontable/dist/handsontable.full.css";
+import { HotTable } from "@handsontable/react";
+import Handsontable from "handsontable";
 // import 'handsontable-pro/dist/handsontable.full.css';
 // import { HotTable } from '@handsontable-pro/react';
 
-class App extends Component
-{
-  constructor(props)
-  {
+class App extends Component {
+  constructor(props) {
     super(props);
     this.state = {
       showProviderList: false,
@@ -22,8 +20,7 @@ class App extends Component
     };
   }
 
-  setProvider(providerList)
-  {
+  setProvider(providerList) {
     console.log("setting to provider list: " + providerList);
     this.setState({
       showProviderList: true,
@@ -112,8 +109,7 @@ class App extends Component
     });
   }
 
-  showDashboard()
-  {
+  showDashboard() {
     this.setState({
       showProviderList: false
     });
@@ -133,11 +129,12 @@ class App extends Component
       );
   }
 
-  renderDashboardManager()
-  {
-      return (
-        <DashboardView onSetProvider={providerList => this.setProvider(providerList)} />
-      );
+  renderDashboardManager() {
+    return (
+      <DashboardView
+        onSetProvider={providerList => this.setProvider(providerList)}
+      />
+    );
   }
 
   renderQuestionPreview()
@@ -201,15 +198,18 @@ class DashboardView extends Component
   }
 }
 
-class ProviderManager extends Component
-{
-  constructor(props)
-  {
+class ProviderManager extends Component {
+  constructor(props) {
     super(props);
   }
 
-  render()
-  {
+  changeProvider(newProviderList) {
+    this.setState({
+      providerList: newProviderList
+    });
+  }
+
+  render() {
     return (
       <div className="ProviderManager">
         <h2> Provider Information </h2>
@@ -225,10 +225,8 @@ class ProviderManager extends Component
   }
 }
 
-class TableManager extends Component
-{
-  constructor(props)
-  {
+class TableManager extends Component {
+  constructor(props) {
     super(props);
     this.state = {
       providerList: this.props.providerList,
@@ -236,7 +234,7 @@ class TableManager extends Component
       dataFields: this.props.dataFieldsFromFirebase,
       itemNames: [],
       reloadFromFirebase: this.props.reloadFromFirebase
-    }
+    };
     this.hotSettings = {
       rowHeaders: false,
       fixedRowsTop: 1,
@@ -369,30 +367,21 @@ class TableManager extends Component
           </div>
         </div>
         <div id="hot-app">
-          <HotTable
-            ref={this.hotTableComponent}
-            settings={this.hotSettings} />
+          <HotTable ref={this.hotTableComponent} settings={this.hotSettings} />
         </div>
       </div>
     );
   }
 }
 
-class TextBox extends Component
-{
-  constructor(props)
-  {
-      super(props);
-      this.state = {
-
-      }
+class TextBox extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
   }
 
-  render()
-  {
-    return (
-      <input type="text" ></input>
-    );
+  render() {
+    return <input type="text" />;
   }
 }
 
