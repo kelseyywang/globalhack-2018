@@ -34,7 +34,8 @@ TEXT_MAP = {
     'phase2': 'We can help with that. What is your zipcode?',
     'phase2mess': 'Sorry, I didn\'t get that. Please enter a 5-digit zipcode.',
     'phase3mess': 'Please answer yes or no.',
-    'give-resources': 'These are some organizations that fit your needs:'
+    'give-resources': 'These are some organizations that fit your needs:',
+    'no-resources': 'Sorry, we cannot find any organizations that fit your needs. Please call us for more specific information.'
 }
 
 CUSTOM_TEXT_MAP = {
@@ -199,26 +200,43 @@ def send_resources(curr_user_info, additional_filters):
     firebase_data = read_services_firebase(curr_intent)
     name_of_filter1 = firebase_data['FILTER1']
     fits_additional_constraints = True
+    # print('PEEP ADDITIONAL INFO', additional_info)
+    # print('PEEP ADDITIONAL FILTERS', additional_filters)
     for nodekey in firebase_data:
         if nodekey != 'TRACKED-DATA' and nodekey != 'DATA-TO-QUESTIONS' and nodekey != 'FILTER1':
             this_service = firebase_data[nodekey]
+            fits_additional_constraints = True
             for j in range(len(additional_filters)):
                 if this_service[additional_filters[j]].lower() != additional_info[j].lower():
+                    # print('ADDITIONAL CONSTRAINTS FALSE at this service[', additional_filters[j])
+                    # print('additional_info[j]', additional_info[j])
                     fits_additional_constraints = False
+            # print("ZIPCODE TEST", abs(int(this_service['ZIPCODE']) - int(curr_zipcode)) < 1000)
+            # print("additionalconstrains TEST", fits_additional_constraints)
+            # print("service matches TEST", this_service[name_of_filter1].lower() == curr_filter_ans.lower())
+            # print("THIS IS", this_service['NAME'])
+            # print('NAME OF FILTER1 IS', name_of_filter1)
+            # print('curr_filter_ans', curr_filter_ans)
+            
             if fits_additional_constraints and abs(int(this_service['ZIPCODE']) - int(curr_zipcode)) < 1000 and this_service[name_of_filter1].lower() == curr_filter_ans.lower():
                 to_send.append((this_service.get('NAME', 'N/A'), this_service.get('ADDRESS', 'N/A'), this_service.get('PHONE NUMBER', 'N/A')))
     return send_resource_messages(to_send, curr_lang)
     
 def send_resource_messages(to_send, language):
-    resp = create_msg_response([get_msg('give-resources')], language)
-    send_str = ''
-    for s in to_send:
-        if language == 'es':
-            send_str = 'Nombre: ' + s[0] + '. Direccion: ' + s[1] + '. Numero de telefono: ' + s[2]
-        else:
-            send_str = 'Name: ' + s[0] + '. Address: ' + s[1] + '. Phone number: ' + s[2]
-        resp.message(send_str)
-    return str(resp)
+    print('to send is ', to_send)
+    if len(to_send) > 0:
+        resp = create_msg_response([get_msg('give-resources')], language)
+        send_str = ''
+        for s in to_send:
+            if language == 'es':
+                send_str = 'Nombre: ' + s[0] + '. Direccion: ' + s[1] + '. Numero de telefono: ' + s[2]
+            else:
+                send_str = 'Name: ' + s[0] + '. Address: ' + s[1] + '. Phone number: ' + s[2]
+            resp.message(send_str)
+        return str(resp)
+    else:
+        resp = create_msg_response([get_msg('no-resources')], language)
+        return str(resp)
         
     
 @app.route('/sms', methods=['GET', 'POST'])
