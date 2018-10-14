@@ -7,7 +7,7 @@ import urllib.error
 import json
 import re
 # import dialogflow_v2 as dialogflow
-import dialogflow_v2beta1 
+import dialogflow_v2beta1
 import os
 import http.client, urllib.parse, uuid
 
@@ -27,7 +27,7 @@ LANGUAGES_MAP = {
 
 TEXT_MAP = {
     'start-over': 'Enter \'restart\' at any time to start over.',
-    'phase-1': 'Welcome! We will give you local resources curated by St. Louis Immigrant Services. Please tell us your language of choice.',
+    'phase-1': 'Welcome to Samaritan! We will give you local resources curated by St. Louis Immigrant Services. Please tell us your language of choice.',
     'phase0': 'Sorry, we only support English and Spanish (Espanol) right now. Enter English or Spanish.',
     'phase1': 'Please tell us what you need or enter one of the following categories: Health, Childcare, Employment, Legal.',
     'phase1mess': 'Please clarify what you need or enter one of the following categories: Health, Childcare, Employment, Legal.',
@@ -55,8 +55,8 @@ def update_firebase(node, value_dict):
         print(message['error'])
     else:
         print('Firebase Update:', loader.read())
-        
-        
+
+
 def read_user_firebase(node):
     request = urllibrequest.Request(FIREBASE_BASE_URL + 'chatbot/' + node + '.json', method='GET')
     try:
@@ -69,11 +69,11 @@ def read_user_firebase(node):
         my_json = read.decode('utf8').replace("'", '"')
         data = json.loads(my_json)
         return data
-        
+
 def translate(text, lang):
     subscriptionKey = '79019ab8e4784d9e8f2a1daf956c7435'
     host = 'api.cognitive.microsofttranslator.com'
-    path = '/translate?api-version=3.0'    
+    path = '/translate?api-version=3.0'
     params = "&to=" + lang;
     def call_translate(content):
         headers = {
@@ -95,7 +95,7 @@ def translate(text, lang):
     result.decode('utf8').replace("'", '"')
     json_res = json.loads(result.decode('utf8').replace("'", '"'))
     return json_res[0]['translations'][0]['text']
-    
+
 def read_services_firebase(intent):
     request = urllibrequest.Request(FIREBASE_BASE_URL + 'web-app/provider-lists/' + intent + '-providers.json', method='GET')
     try:
@@ -108,7 +108,7 @@ def read_services_firebase(intent):
         my_json = read.decode('utf8').replace("'", '"')
         data = json.loads(my_json)
         return data
-            
+
 def detect_intent(text):
     text = text.lower()
     if 'health' in text or 'bless you' in text:
@@ -128,35 +128,35 @@ def detect_lang(text):
         return LANGUAGES_MAP[text]
     else:
         return 'none'
-    
+
 def clean_zip(zip):
     zip = re.sub('[^0-9]','', zip)
     return zip
-    
+
 def detect_intent_dialogflow(text):
     os.environ['GOOGLE_APPLICATION_CREDENTIALS']='./globalhack7safetynetbot-cd8c283a33e7.json'
     client = dialogflow_v2beta1.SessionsClient()
     session = client.session_path('globalhack7safetynetbot', 213)
-    text_input = dialogflow_v2beta1.types.TextInput(text=text, language_code='en') 
-    query_input = dialogflow_v2beta1.types.QueryInput(text=text_input) 
+    text_input = dialogflow_v2beta1.types.TextInput(text=text, language_code='en')
+    query_input = dialogflow_v2beta1.types.QueryInput(text=text_input)
     response = client.detect_intent(session, query_input)
     return str(response.query_result.intent.display_name)
-    
-    
+
+
 def get_msg(msg_type):
     if msg_type in TEXT_MAP:
         print(msg_type)
         return TEXT_MAP[msg_type]
     else:
         return msg_type
-        
+
 def get_custom_msg(msg_type, phase):
     print("MESSAGE TYPE", msg_type, "phase", phase)
     if (msg_type, phase) in CUSTOM_TEXT_MAP:
         return CUSTOM_TEXT_MAP[(msg_type, phase)]
     else:
         return msg_type
-        
+
 def detect_yes_or_no(text):
     text = text.lower()
     if 'yes' in text or 'y' == text:
@@ -165,7 +165,7 @@ def detect_yes_or_no(text):
         return 'no'
     else:
         return 'none'
-        
+
 def create_msg_response(resp_messages, curr_lang):
     resp = MessagingResponse()
     if curr_lang == 'es':
@@ -174,7 +174,7 @@ def create_msg_response(resp_messages, curr_lang):
     for msg in resp_messages:
         resp.message(msg)
     return resp
-        
+
 def determine_more_filters(intent):
     firebase_data = read_services_firebase(intent)
     name_of_filter1 = firebase_data['FILTER1']
@@ -187,7 +187,7 @@ def determine_more_filters(intent):
                 qs.append(firebase_data['DATA-TO-QUESTIONS'][filter])
                 additional_filters.append(filter)
     return qs, additional_filters
-    
+
 def send_resources(curr_user_info, additional_filters):
     to_send = []
     curr_lang = curr_user_info[0]
@@ -217,11 +217,11 @@ def send_resources(curr_user_info, additional_filters):
             # print("THIS IS", this_service['NAME'])
             # print('NAME OF FILTER1 IS', name_of_filter1)
             # print('curr_filter_ans', curr_filter_ans)
-            
+
             if fits_additional_constraints and abs(int(this_service['ZIPCODE']) - int(curr_zipcode)) < 1000 and this_service[name_of_filter1].lower() == curr_filter_ans.lower():
                 to_send.append((this_service.get('NAME', 'N/A'), this_service.get('ADDRESS', 'N/A'), this_service.get('PHONE NUMBER', 'N/A')))
     return send_resource_messages(to_send, curr_lang)
-    
+
 def send_resource_messages(to_send, language):
     print('to send is ', to_send)
     if len(to_send) > 0:
@@ -237,12 +237,12 @@ def send_resource_messages(to_send, language):
     else:
         resp = create_msg_response([get_msg('no-resources')], language)
         return str(resp)
-        
-    
+
+
 @app.route('/sms', methods=['GET', 'POST'])
 def sms_reply():
     phone_id = re.sub(r'\W+', '', frequest.form['From'])
-    message_body = frequest.form['Body']
+    message_body = frequest.form['Body'].strip()
     curr_info = read_user_firebase(phone_id)
     curr_phase = 0
     curr_intent = 'none'
@@ -280,7 +280,6 @@ def sms_reply():
         if curr_lang == 'es':
             message_body = translate(message_body, 'en')
             print("MESSAGE BODY IS NOW ", message_body)
-        
     if curr_phase == 1:
         #Trying to understand their problem
         curr_intent = detect_intent(message_body)
@@ -321,8 +320,8 @@ def sms_reply():
             if len(more_filter_qs) > 0:
                 update_firebase(phone_id, {'phase': 4})
                 update_firebase(phone_id, {'additional_filter_column_headers': filter_headers, 'additional_filter_questions': more_filter_qs})
-                # message first additional filter q 
-                resp_messages.append(more_filter_qs[0])        
+                # message first additional filter q
+                resp_messages.append(more_filter_qs[0])
                 print("ADDITIONAL QS. KEEP GOING")
             else:
                 return send_resources([curr_lang, curr_intent, curr_zipcode, curr_filter_ans], [])
@@ -333,17 +332,18 @@ def sms_reply():
         curr_filter_ans = curr_info['filter_ans']
         my_additional_filter_ans_arr = []
         if 'my_additional_filter_ans_arr' in curr_info:
-            my_additional_filter_ans_arr = curr_info['my_additional_filter_ans_arr']            
+            my_additional_filter_ans_arr = curr_info['my_additional_filter_ans_arr']
         additional_filter_column_headers = curr_info['additional_filter_column_headers']
         additional_filter_questions = curr_info['additional_filter_questions']
         print("these are qs", additional_filter_questions)
-        print("these are answers!!", additional_filter_column_headers)    
+        print("these are answers!!", additional_filter_column_headers)
     if curr_phase > 3:
         index_in_additional = curr_phase - 3
         if detect_yes_or_no(message_body) == 'none':
+            resp_messages.append(get_msg('phase3mess'))
             resp_messages.append(additional_filter_questions[index_in_additional - 1])
         else:
-            #has yes or no. 
+            #has yes or no.
             my_additional_filter_ans_arr += [detect_yes_or_no(message_body)]
             if index_in_additional > len(additional_filter_column_headers) - 1:
                 #done
@@ -355,6 +355,6 @@ def sms_reply():
     return str(create_msg_response(resp_messages, curr_lang))
 # all chatbot code goes in directory called chatbot
 
-            
+
 if __name__ == '__main__':
     app.run(debug=True)
