@@ -96,7 +96,7 @@ class App extends Component {
       itemNamesTemp.push("TRACKED-DATA");
 
       for (let item in items) {
-        if (item !== "TRACKED-DATA" && item !== "DATA-TO-QUESTIONS")
+        if (item !== "TRACKED-DATA" && item !== "DATA-TO-QUESTIONS" && item !== "FILTER1")
         {
           itemNamesTemp.push(item);
           var newItem = {
