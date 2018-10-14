@@ -35,6 +35,13 @@
   color: #4ab4ff;
 }
 
+.textAreaInput {
+  font-family: 'Lato';
+  color: #333333;
+  border-radius: 5px;
+  border: none;
+}
+
 .QuestionPreview
 {
   float: right;
@@ -57,7 +64,7 @@
 .ProviderManager {
   padding: 20px;
   float: left;
-  min-width: 50%;
+  min-width: 800px;
   flex-grow: 2;
   animation-name: animatetop;
     animation-duration: 1s;
@@ -81,6 +88,14 @@
   font-family: 'Lato';
 }
 
+.logo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+}
+
 .ProviderSelect:hover {
 	background-color: #e1f2fe;
 }
@@ -93,6 +108,22 @@
 .ToolBar {
   display: flex;
   width: 100%;
+}
+
+.TableButton
+{
+  border: 1px solid #4abfff;
+  background-color: transparent;
+  margin: 10px;
+  border-radius: 5px;
+}
+
+.TableButton:hover {
+  background-color: #f0f0f0;
+}
+
+.TableButton:active {
+  background-color: #eeeeee;
 }
 
 .LeftDock {

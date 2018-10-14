@@ -22,10 +22,12 @@ class App extends Component {
     };
     this.addNewEntry = this.addNewEntry.bind(this);
     this.setColumn = this.setColumn.bind(this);
+    this.updateQuestionText = this.updateQuestionText.bind(this);
+    this.updateFirebase = this.updateFirebase.bind(this);
+    this.showFlowEditor = this.showFlowEditor.bind(this);
   }
 
   setProvider(providerList) {
-    console.log("setting to provider list: " + providerList);
     this.setState({
       showProviderList: true,
       currentProviderList: providerList
@@ -33,23 +35,40 @@ class App extends Component {
     this.pullFromFirebase(providerList);
   }
 
+  updateQuestionText(newValue)
+  {
+    const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.state.currentProviderList).child("DATA-TO-QUESTIONS");
+    infoRef.update({
+      [this.state.selectedField]: newValue
+    });
+    this.setState({
+      questionPreviewText: newValue
+    });
+  }
+
   setColumn(col)
   {
-    console.log("COLUMN SELECTED: " + col);
     var colHeaders = this.state.dataFromFirebase[this.state.itemNames.indexOf("TRACKED-DATA")];
-    var lookUpField = colHeaders[col];
-    var questionText = "";
-    const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.state.currentProviderList).child("DATA-TO-QUESTIONS");
-    infoRef.once('value', (snapshot) => {
-      let items = snapshot.val();
-      questionText = items[lookUpField];
-      this.setState({
-        selectedColumn: col,
-        questionPreviewText: questionText,
-        selectedField: lookUpField
+    if (colHeaders)
+    {
+      var lookUpField = colHeaders[col];
+      var questionText = "";
+      const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.state.currentProviderList).child("DATA-TO-QUESTIONS");
+      infoRef.once('value', (snapshot) => {
+        let items = snapshot.val();
+        questionText = items[lookUpField];
+        this.setState({
+          selectedColumn: col,
+          questionPreviewText: questionText,
+          selectedField: lookUpField
+        });
       });
-      console.log(questionText);
-    });
+    }
+  }
+
+  updateFirebase()
+  {
+    this.pullFromFirebase(this.state.currentProviderList);
   }
 
   pullFromFirebase(providerList)
@@ -85,15 +104,12 @@ class App extends Component {
           };
           for (let field in dataFields)
           {
-            console.log(field);
-            console.log(dataFields[field]);
             if (items[item][dataFields[field]])
             {
               newItem[dataFields[field]] = items[item][dataFields[field]];
             }
 
           }
-          console.log(newItem);
           newData.push(newItem);
         }
       }
@@ -102,22 +118,18 @@ class App extends Component {
         itemNames: itemNamesTemp,
         dataFieldsFromFirebase: dataFields,
       });
-      console.log(this.state);
     });
   }
 
   addNewEntry()
   {
-    console.log("NEW ENTRY " + this.state.currentProviderList);
     var newData = this.state.itemNames.slice();
     const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.state.currentProviderList);
     var newItemName = infoRef.push().key;
     var newRef = infoRef.child(newItemName);
 
     var newItem = {};
-    console.log(this.state.dataFieldsFromFirebase);
     var colHeaders = this.state.dataFromFirebase[this.state.itemNames.indexOf("TRACKED-DATA")];
-    console.log(colHeaders);
     for (let field in colHeaders)
     {
       newItem[colHeaders[field]] = " ";
@@ -139,7 +151,6 @@ class App extends Component {
 
   renderProviderManager(providerListName)
   {
-      console.log("showing provider list");
       return (
         <ProviderManager
           reloadFromFirebase={'true'}
@@ -148,6 +159,7 @@ class App extends Component {
           dataItemNames={this.state.itemNames}
           addNewEntry={this.addNewEntry}
           setColumn={this.setColumn}
+          updateFirebase={this.updateFirebase}
           providerList={providerListName} goBack={() => this.showDashboard()} />
       );
   }
@@ -156,18 +168,24 @@ class App extends Component {
     return (
       <DashboardView
         onSetProvider={providerList => this.setProvider(providerList)}
+        showFlowEditor={this.showFlowEditor}
       />
     );
   }
 
   renderQuestionPreview()
   {
-    console.log(this.state.questionPreviewText);
       return(
             <QuestionPreview
+              updateQuestionText={this.updateQuestionText}
               questionText={this.state.questionPreviewText}
               selectedField={this.state.selectedField} />
       );
+  }
+
+  showFlowEditor()
+  {
+
   }
 
   render()
@@ -177,6 +195,7 @@ class App extends Component {
       <div className="App">
         <div className="App-header">
           <h3> Samaritan </h3>
+          <img className="logo" src="samaritan.png" />
         </div>
         <div className="MainContent">
           <div className="Dashboard-Container">
@@ -209,6 +228,11 @@ class QuestionPreview extends Component
     this.setState({questionText: e.target.value});
   }
 
+  updateQuestionText()
+  {
+    this.props.updateQuestionText(this.state.questionText);
+  }
+
   render()
   {
     return (
@@ -220,8 +244,22 @@ class QuestionPreview extends Component
         <p> To help your users filter for useful results, Samaritan will ask: </p>
         <p className="questionText"> {this.props.questionText} </p>
         <p> If you would like to change this question, type a new question in the box below </p>
-        <input type='text' value={this.state.questionText} onChange={this.handleChange} />
-        <button> See question tree flow </button>
+        <textarea className="textAreaInput" type='text' value={this.state.questionText} onChange={(event) => this.handleChange(event)} />
+        <button className="TableButton" onClick={() => this.updateQuestionText()}> Update question </button>
+        <br/>
+        <button className="TableButton"> See question tree flow </button>
+      </div>
+    );
+  }
+}
+
+class FlowView extends Component
+{
+  render()
+  {
+    return (
+      <div className="FlowView">
+
       </div>
     );
   }
@@ -234,13 +272,13 @@ class DashboardView extends Component
     return (
       <div className="DashboardView">
         <div className="Dashboard-content">
-          <h3> Provider Info </h3>
+          <h3> Select Provider Category </h3>
              <button className="ProviderSelect" onClick={() => this.props.onSetProvider("healthcare-providers")}> Healthcare </button>
              <button className="ProviderSelect" onClick={() => this.props.onSetProvider("childcare-providers")}> Child Care </button>
-             <button className="ProviderSelect" onClick={() => this.props.onSetProvider("legalservice-providers")}> Legal Services </button>
+             <button className="ProviderSelect" onClick={() => this.props.onSetProvider("legal-providers")}> Legal Services </button>
              <button className="ProviderSelect" onClick={() => this.props.onSetProvider("employment-providers")}> Employment Services </button>
            <h3> Manage Chat Flow </h3>
-              <button className="ProviderSelect"> Edit Flow </button>
+              <button className="ProviderSelect" onClick={() => this.props.showFlowEditor()}> Edit Flow </button>
         </div>
       </div>
     );
@@ -269,6 +307,7 @@ class ProviderManager extends Component {
           dataItemNames={this.props.dataItemNames}
           addNewEntry={this.props.addNewEntry}
           setColumn={this.props.setColumn}
+          updateFirebase={this.props.updateFirebase}
           reloadFromFirebase={this.props.reloadFromFirebase} />
       </div>
     );
@@ -288,6 +327,9 @@ class TableManager extends Component {
     this.hotSettings = {
       rowHeaders: false,
       fixedRowsTop: 1,
+      width: 800,
+      height: 500,
+      stretchH: true,
       cells: function (row, col) {
         var cellProp = {};
         if (row === 0){
@@ -304,12 +346,10 @@ class TableManager extends Component {
 
   updateSelectedRow(event, coords, TD)
   {
-    console.log(coords);
     this.props.setColumn(coords["col"]);
   }
 
   componentDidMount() {
-    console.log(this.props);
     this.loadDataToTable();
     Handsontable.hooks.add('afterChange', (change, source)=>this.updateFirebase(change, source));
     Handsontable.hooks.add('afterOnCellMouseDown', (event, coords, TD)=>this.updateSelectedRow(event, coords, TD));
@@ -321,15 +361,11 @@ class TableManager extends Component {
     if (source === 'loadData') {
         return; //don't save this change
     }
-        console.log(changes);
-    console.log(this);
     if (this.props != null){
       for (let i = 0; i < changes.length; i++)
       {
-        console.log("UPDATE FIREBASE: " + changes[i][0] + " " + this.props.providerList);
         const infoRef = firebase.database().ref("web-app").child("provider-lists").child(this.props.providerList);
         var data = this.hotTableComponent.current.hotInstance.getData();
-        console.log("UPDATING: " + this.props.dataItemNames[changes[i][0]]);
         if (changes[i][0] == 0){
           // IF YOU EDITED A COLUMN HEADER
           infoRef.child(this.props.dataItemNames[changes[i][0]]).update({
@@ -346,17 +382,14 @@ class TableManager extends Component {
         }
 
       }
+      this.props.updateFirebase();
     }
   }
 
   loadDataToTable()
   {
-    console.log("LOAD DATA TO TABLE: " + this.props.dataFromFirebase);
     var newData = [];
-    console.log(this.props.dataItemNames);
-    console.log(this.props.dataItemNames.indexOf("TRACKED-DATA"));
     var colHeaders = this.props.dataFromFirebase[this.props.dataItemNames.indexOf("TRACKED-DATA")];
-    console.log(colHeaders);
     for (let i = 0; i < this.props.dataFromFirebase.length; i++)
     {
       if (i === this.props.dataItemNames.indexOf("TRACKED-DATA")) {
@@ -368,7 +401,6 @@ class TableManager extends Component {
         {
           newItem[field] = this.props.dataFromFirebase[i][colHeaders[field]];
         }
-        console.log(newItem);
         newData.push(newItem);
       }
     }
@@ -378,16 +410,8 @@ class TableManager extends Component {
   handleAddClick(type)
   {
     if (type === "COLUMN") {
-      // var newColumnHeaders = this.hotTableComponent.current.hotInstance.getColHeader();
-      // newColumnHeaders.push("NEW COL HEADER");
-      // console.log(newColumnHeaders);
-      // this.hotTableComponent.current.hotInstance.updateSettings({
-      //   colHeaders: newColumnHeaders
-      // });
-      // this.hotSettings.colHeaders = newColumnHeaders;
       this.hotTableComponent.current.hotInstance.alter('insert_col', this.props.dataFromFirebase[0].length);
       this.hotTableComponent.current.hotInstance.setDataAtCell(0, this.hotTableComponent.current.hotInstance.getData()[0].length - 1, "NEW COL");
-      // this.props.dataFromFirebase[0][this.props.dataFromFirebase[0].length - 1] = "NEW COL"; // TODO: fix state mutation
     }
     else if (type === "ROW") {
       this.hotTableComponent.current.hotInstance.alter('insert_row', 1);
@@ -399,31 +423,22 @@ class TableManager extends Component {
   }
 
   render() {
-    console.log("RELOAD " + this.state.reloadFromFirebase + this.state.providerList);
     if (this.hotTableComponent.current != null)
     {
       this.loadDataToTable();
     }
-    // if (this.state.reloadFromFirebase)
-    // {
-    //   console.log("RELOAD");
-    //   this.setState({
-    //     reloadFromFirebase: false
-    //   });
-    //   // this.pullFromFirebase();
-    // }
     return (
       <div className="TableManager">
         <div className="ToolBar">
           <div className="LeftDock">
-            <button onClick={() => this.handleAddClick("COLUMN")}>
-              ADD NEW DATA FIELD
-            </button>
+          <button className="TableButton" onClick={() => this.handleAddClick("ROW")}>
+            ADD NEW ENTRY
+          </button>
           </div>
           <div className="RightDock">
-            <button onClick={() => this.handleAddClick("ROW")}>
-              ADD NEW ENTRY
-            </button>
+          <button className="TableButton" onClick={() => this.handleAddClick("COLUMN")}>
+            ADD NEW DATA FIELD
+          </button>
           </div>
         </div>
         <div id="hot-app">
