@@ -33,7 +33,8 @@ TEXT_MAP = {
     'phase1mess': 'Please clarify what you need or enter one of the following categories: Health, Childcare, Employment, Legal.',
     'phase2': 'We can help with that. What is your zipcode?',
     'phase2mess': 'Sorry, I didn\'t get that. Please enter a 5-digit zipcode.',
-    'phase3mess': 'Please answer yes or no.'
+    'phase3mess': 'Please answer yes or no.',
+    'give-resources': 'These are some organizations that fit your needs:'
 }
 
 CUSTOM_TEXT_MAP = {
@@ -157,9 +158,9 @@ def get_custom_msg(msg_type, phase):
         
 def detect_yes_or_no(text):
     text = text.lower()
-    if 'yes' in text or 'y' in text:
+    if 'yes' in text or 'y' == text:
         return 'yes'
-    elif 'no' in text or 'n' in text:
+    elif 'no' in text or 'n' == text:
         return 'no'
     else:
         return 'none'
@@ -173,18 +174,66 @@ def create_msg_response(resp_messages, curr_lang):
         resp.message(msg)
     return resp
         
+def determine_more_filters(intent):
+    firebase_data = read_services_firebase(intent)
+    name_of_filter1 = firebase_data['FILTER1']
+    qs = []
+    additional_filters = []
+    if 'DATA-TO-QUESTIONS' in firebase_data:
+        for filter in firebase_data['DATA-TO-QUESTIONS']:
+            if filter != name_of_filter1:
+                # not the filter1 filter
+                qs.append(firebase_data['DATA-TO-QUESTIONS'][filter])
+                additional_filters.append(filter)
+    return qs, additional_filters
+    
+def send_resources(curr_user_info, additional_filters):
+    to_send = []
+    curr_lang = curr_user_info[0]
+    curr_intent = curr_user_info[1]
+    curr_zipcode = curr_user_info[2]
+    curr_filter_ans = curr_user_info[3]
+    additional_info = []
+    for i in range(len(curr_user_info) - 4):
+        additional_info.append(curr_user_info[i + 4])
+    firebase_data = read_services_firebase(curr_intent)
+    name_of_filter1 = firebase_data['FILTER1']
+    fits_additional_constraints = True
+    for nodekey in firebase_data:
+        if nodekey != 'TRACKED-DATA' and nodekey != 'DATA-TO-QUESTIONS' and nodekey != 'FILTER1':
+            this_service = firebase_data[nodekey]
+            for j in range(len(additional_filters)):
+                if this_service[additional_filters[j]].lower() != additional_info[j].lower():
+                    fits_additional_constraints = False
+            if fits_additional_constraints and abs(int(this_service['ZIPCODE']) - int(curr_zipcode)) < 1000 and this_service[name_of_filter1].lower() == curr_filter_ans.lower():
+                to_send.append((this_service.get('NAME', 'N/A'), this_service.get('ADDRESS', 'N/A'), this_service.get('PHONE NUMBER', 'N/A')))
+    return send_resource_messages(to_send, curr_lang)
+    
+def send_resource_messages(to_send, language):
+    resp = create_msg_response([get_msg('give-resources')], language)
+    send_str = ''
+    for s in to_send:
+        if language == 'es':
+            send_str = 'Nombre: ' + s[0] + '. Direccion: ' + s[1] + '. Numero de telefono: ' + s[2]
+        else:
+            send_str = 'Name: ' + s[0] + '. Address: ' + s[1] + '. Phone number: ' + s[2]
+        resp.message(send_str)
+    return str(resp)
         
-#TODO: support custom filters and determine how to get questions. add espanol.
+    
 @app.route('/sms', methods=['GET', 'POST'])
 def sms_reply():
-    print("SERVOCES", read_services_firebase('childcare'))
     phone_id = re.sub(r'\W+', '', frequest.form['From'])
     message_body = frequest.form['Body']
     curr_info = read_user_firebase(phone_id)
     curr_phase = 0
     curr_intent = 'none'
     curr_lang = 'none'
+    curr_filter_ans = ''
     resp_messages = []
+    additional_filter_column_headers = []
+    additional_filter_questions = []
+    my_additional_filter_ans_arr = []
     if curr_info and 'phase' in curr_info:
         print("CURR PHASE IS ", curr_info['phase'])
         curr_phase = curr_info['phase']
@@ -249,20 +298,42 @@ def sms_reply():
         if curr_filter_ans == 'none':
             resp_messages.append(get_msg('phase3mess'))
         else:
-            if determine_more_filters(curr_intent, phase + 1):
-                print("Not implemented. Keep going in this case.")
+            update_firebase(phone_id, {'filter_ans': detect_yes_or_no(message_body)})
+            more_filter_qs, filter_headers = determine_more_filters(curr_intent)
+            if len(more_filter_qs) > 0:
+                update_firebase(phone_id, {'phase': 4})
+                update_firebase(phone_id, {'additional_filter_column_headers': filter_headers, 'additional_filter_questions': more_filter_qs})
+                # message first additional filter q 
+                resp_messages.append(more_filter_qs[0])        
+                print("ADDITIONAL QS. KEEP GOING")
             else:
-                print("Not implemented. Output list of resources in this case.")            
+                return send_resources([curr_lang, curr_intent, curr_zipcode, curr_filter_ans], [])
     elif curr_phase > 3:
         curr_lang = curr_info['lang']
         curr_intent = curr_info['intent']
         curr_zipcode = curr_info['zipcode']
-        #TODO: delet^
-        curr_ans = curr_info['filter_ans']
-    # custom questions
-    if curr_phase == 4 and curr_intent == 'childcare':
-        print("ya")
-
+        curr_filter_ans = curr_info['filter_ans']
+        my_additional_filter_ans_arr = []
+        if 'my_additional_filter_ans_arr' in curr_info:
+            my_additional_filter_ans_arr = curr_info['my_additional_filter_ans_arr']            
+        additional_filter_column_headers = curr_info['additional_filter_column_headers']
+        additional_filter_questions = curr_info['additional_filter_questions']
+        print("these are qs", additional_filter_questions)
+        print("these are answers!!", additional_filter_column_headers)    
+    if curr_phase > 3:
+        index_in_additional = curr_phase - 3
+        if detect_yes_or_no(message_body) == 'none':
+            resp_messages.append(additional_filter_questions[index_in_additional - 1])
+        else:
+            #has yes or no. 
+            my_additional_filter_ans_arr += [detect_yes_or_no(message_body)]
+            if index_in_additional > len(additional_filter_column_headers) - 1:
+                #done
+                return send_resources([curr_lang, curr_intent, curr_zipcode, curr_filter_ans] + my_additional_filter_ans_arr, additional_filter_column_headers)
+            else:
+                update_firebase(phone_id, {'my_additional_filter_ans_arr': my_additional_filter_ans_arr})
+                update_firebase(phone_id, {'phase': curr_phase + 1})
+                resp_messages.append(additional_filter_questions[index_in_additional])
     return str(create_msg_response(resp_messages, curr_lang))
 # all chatbot code goes in directory called chatbot
 
