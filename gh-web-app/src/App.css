@@ -31,6 +31,10 @@
   font-family: 'Lato';
 }
 
+.questionText {
+  color: #4ab4ff;
+}
+
 .QuestionPreview
 {
   float: right;
@@ -49,10 +53,12 @@
     to {left: 0; opacity: 1}
 }
 
+
 .ProviderManager {
   padding: 20px;
   float: left;
-  flex-grow: 1;
+  min-width: 50%;
+  flex-grow: 2;
   animation-name: animatetop;
     animation-duration: 1s;
 }
