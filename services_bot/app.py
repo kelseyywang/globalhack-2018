@@ -1,3 +1,4 @@
+
 from flask import Flask, redirect
 from twilio.twiml.messaging_response import MessagingResponse
 from flask import request as frequest
@@ -14,6 +15,23 @@ app = Flask(__name__)
 FIREBASE_BASE_URL = 'https://globalhack-2018.firebaseio.com/chatbot/'
 FIREBASE_PATHS = {
     '':''
+}
+LANGUAGES_MAP = {
+    'english': 'en',
+    'en': 'en',
+    'spanish': 'es',
+    'espanol': 'es',
+    'es': 'es',
+    'sp': 'es'
+}
+
+
+TEXT_MAP = {
+    'phase-1': 'Welcome! We will give you local resources curated by St. Louis Immigrant Services. Please tell us your language of choice.',
+    'phase0': 'Sorry, we only support English and Spanish (Espanol) right now. Enter English or Spanish.',
+    'phase1en': 'Please tell us what you need or enter one of the following categories: Health, Childcare, Employment, Legal.',
+    'phase1messen': 'Please clarify what you need or enter one of the following categories: Health, Childcare, Employment, Legal.',
+    'phase2en': 'Great. What is your zipcode?'
 }
 
 def update_firebase(node, value_dict):
@@ -76,6 +94,13 @@ def detect_intent(text):
     else:
         return 'none'
 
+def detect_lang(text):
+    text = text.lower()
+    if text in LANGUAGES_MAP:
+        return LANGUAGES_MAP[text]
+    else:
+        return 'none'
+    
 def clean_zip(zip):
     zip = re.sub('[^0-9]','', zip)
     return zip
@@ -89,53 +114,73 @@ def detect_intent_dialogflow2():
     # response = client.detect_intent(session=session, query_input=query_input) 
     response = client.detect_intent(session, query_input)
     print('RESPONSE', response)
+    print('WHAT')
+    
+    
+def get_msg(msg_type):
+    if msg_type in TEXT_MAP:
+        return TEXT_MAP[msg_type]
+    else:
+        return msg_type
         
+#TODO: add in "you selected...". integrate with dialogflow. support custom filters and determine how to get questions.
 @app.route('/sms', methods=['GET', 'POST'])
 def sms_reply():
-    detect_intent_dialogflow2()
+    # detect_intent_dialogflow2()
     resp = MessagingResponse()
     phone_id = re.sub(r'\W+', '', frequest.form['From'])
     message_body = frequest.form['Body']
     curr_info = read_firebase(phone_id)
-    curr_phase = 1
+    curr_phase = 0
     curr_intent = 'none'
+    curr_lang = 'none'
     if curr_info and 'phase' in curr_info:
         print("CURR PHASE IS ", curr_info['phase'])
         curr_phase = curr_info['phase']
     else:
         #new user
-        resp.message('Welcome! We will give you local resources curated by St. Louis Immigrant Services. Please tell us your problem or enter one of the following categories: Health, Childcare, Employment, Legal.')
-        update_firebase(phone_id, {'phase': 1})
+        resp.message(get_msg('phase-1'))
+        update_firebase(phone_id, {'phase': 0})
         return str(resp)
+    if curr_phase == 0:
+        curr_lang = detect_lang(message_body)
+        if curr_lang == 'none':
+            resp.message(get_msg('phase0'))
+        else:
+            update_firebase(phone_id, {'lang': curr_lang})
+            update_firebase(phone_id, {'phase': 1})
+            resp.message(get_msg('phase1' + curr_lang))
+    elif curr_phase > 0:
+        curr_lang = curr_info['lang']
+
     if curr_phase == 1:
         #Trying to understand their problem
         curr_intent = detect_intent(message_body)
         if curr_intent == 'none':
-            resp.message('Please clarify your problem or enter one of the following categories: Health, Childcare, Employment, Legal.')
+            resp.message(get_msg('phase1mess' + curr_lang))
         else:
             update_firebase(phone_id, {'intent': curr_intent})
             update_firebase(phone_id, {'phase': 2})
-            print("SHOULD MESSAGE.")
-            resp.message('Great. What is your zipcode?')
-    else:
-        if 'intent' in curr_info:
-            #intent should exist because you are > phase 1
-            curr_intent = curr_info['intent']
-        else:
-            update_firebase(phone_id, {'phase': 1})
-            update_firebase(phone_id, {'intent': 'none'})
+            resp.message(get_msg('phase2' + curr_lang))
+    elif curr_phase > 1:
+        curr_lang = curr_info['lang']
+        curr_intent = curr_info['intent']
     if curr_phase == 2:
         print('your intent is ', curr_intent, ' and your phase is ', curr_phase)
         zipcode = clean_zip(message_body)
         if len(zipcode) == 5:
-            update_firebase(phone_id, {'intent': curr_intent})
             update_firebase(phone_id, {'zipcode': int(zipcode)})
-            update_firebase(phone_id, {'phase': 3})
-            resp.message('Thanks. Filter question!!')
+            update_firebase(phone_id, {'phase': 2})
+            resp.message(get_msg('Thanks. Filter question!!'))
         else:
-            resp.message('Sorry, I didn\'t get that. Please enter a 5-digit zipcode.')
-        if curr_phase == 3:
-            resp.message('PHASE 3')
+            resp.message(get_msg('Sorry, I didn\'t get that. Please enter a 5-digit zipcode.'))
+    elif curr_phase > 2:
+        curr_lang = curr_info['lang']
+        curr_intent = curr_info['intent']
+        curr_zipcode = curr_info['zipcode']
+    if curr_phase == 3:
+        print("CURR PHASE IS 3. VERIFY FILTER QUESTION.")
+        
     return str(resp)
 # all chatbot code goes in directory called chatbot
 
