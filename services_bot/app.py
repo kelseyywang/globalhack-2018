@@ -6,7 +6,6 @@ import urllib.request as urllibrequest
 import urllib.error
 import json
 import re
-# import dialogflow_v2 as dialogflow
 import dialogflow_v2beta1
 import os
 import http.client, urllib.parse, uuid
@@ -85,7 +84,6 @@ def translate(text, lang):
         conn = http.client.HTTPSConnection(host)
         conn.request ("POST", path + params, content, headers)
         response = conn.getresponse()
-        # print(response.read()[0])
         return response.read()
     requestBody = [{
         'Text' : text,
@@ -208,16 +206,7 @@ def send_resources(curr_user_info, additional_filters):
             fits_additional_constraints = True
             for j in range(len(additional_filters)):
                 if this_service[additional_filters[j]].lower() != additional_info[j].lower():
-                    # print('ADDITIONAL CONSTRAINTS FALSE at this service[', additional_filters[j])
-                    # print('additional_info[j]', additional_info[j])
                     fits_additional_constraints = False
-            # print("ZIPCODE TEST", abs(int(this_service['ZIPCODE']) - int(curr_zipcode)) < 1000)
-            # print("additionalconstrains TEST", fits_additional_constraints)
-            # print("service matches TEST", this_service[name_of_filter1].lower() == curr_filter_ans.lower())
-            # print("THIS IS", this_service['NAME'])
-            # print('NAME OF FILTER1 IS', name_of_filter1)
-            # print('curr_filter_ans', curr_filter_ans)
-
             if fits_additional_constraints and abs(int(this_service['ZIPCODE']) - int(curr_zipcode)) < 1000 and this_service[name_of_filter1].lower() == curr_filter_ans.lower():
                 to_send.append((this_service.get('NAME', 'N/A'), this_service.get('ADDRESS', 'N/A'), this_service.get('PHONE NUMBER', 'N/A')))
     return send_resource_messages(to_send, curr_lang)
@@ -353,8 +342,6 @@ def sms_reply():
                 update_firebase(phone_id, {'phase': curr_phase + 1})
                 resp_messages.append(additional_filter_questions[index_in_additional])
     return str(create_msg_response(resp_messages, curr_lang))
-# all chatbot code goes in directory called chatbot
-
 
 if __name__ == '__main__':
     app.run(debug=True)
